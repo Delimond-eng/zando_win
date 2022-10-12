@@ -44,13 +44,13 @@ class Compte {
   }
 
   Compte.fromMap(Map<String, dynamic> data) {
-    compteId = data["compte_id"];
+    compteId = int.parse(data["compte_id"].toString());
     compteLibelle = data["compte_libelle"];
     compteDevise = data["compte_devise"];
     compteStatus = data["compte_status"];
     compteTimestamp = data["compte_create_At"];
     compteState = data["compte_state"];
-    DateTime date = parseTimestampToDate(int.parse(data["compte_create_At"]));
+    DateTime date = parseTimestampToDate(int.parse(data["compte_create_At"].toString()));
     compteDate = dateToString(date);
   }
 }

@@ -54,10 +54,10 @@ class _InventoriesState extends State<Inventories> {
     Future.delayed(const Duration(milliseconds: 500), () {
       setState(() {
         for (var e in dataController.inventories) {
-          if (e.operationType == 'entrée') {
+          if (e.operationType.toLowerCase() == 'entrée') {
             en += e.totalPayment;
           }
-          if (e.operationType == 'sortie') {
+          if (e.operationType.toLowerCase() == 'sortie') {
             so += e.totalPayment;
           }
         }
@@ -188,9 +188,11 @@ class _InventoriesState extends State<Inventories> {
                         ),
                       ),
                       onPressed: () async {
+                        Xloading.showLottieLoading(context);
                         await dataController.loadPayments("details",
                             field: e.operationCompteId);
                         inventoryDetailsModal(context, data: e);
+                        Xloading.dismiss();
                       },
                     ),
                     const SizedBox(
@@ -641,7 +643,7 @@ class SyntheseInfo extends StatelessWidget {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: "$amount",
+                          text: amount.toStringAsFixed(2),
                           style: GoogleFonts.staatliches(
                             color: Colors.black,
                             fontWeight: FontWeight.w800,

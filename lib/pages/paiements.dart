@@ -215,7 +215,7 @@ class _PaiementsState extends State<Paiements> {
               ),
               DataCell(
                 Text(
-                  '${((double.parse(data.facture.factureMontant) - data.totalPayment))} ${data.operationDevise}',
+                  '${((double.parse(data.facture.factureMontant) - data.totalPayment)).toStringAsFixed(2)} ${data.operationDevise}',
                   style: GoogleFonts.didactGothic(
                     fontWeight: FontWeight.w600,
                   ),

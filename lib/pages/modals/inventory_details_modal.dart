@@ -165,7 +165,8 @@ List<DataRow> _createRows(BuildContext context) {
             ),
             DataCell(
               Text(
-                '${(double.parse(p.facture.factureMontant) - (p.totalPayment))}',
+                (double.parse(p.facture.factureMontant) - (p.totalPayment))
+                    .toStringAsFixed(2),
                 style: GoogleFonts.didactGothic(
                   fontWeight: FontWeight.w600,
                 ),

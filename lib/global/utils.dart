@@ -9,7 +9,12 @@ int convertToTimestamp(DateTime date) {
 }
 
 DateTime parseTimestampToDate(int timestamp) {
-  var date = DateTime.fromMicrosecondsSinceEpoch(timestamp * 1000);
+  DateTime date;
+  if (timestamp.toString().length >= 16) {
+    date = DateTime.fromMicrosecondsSinceEpoch(timestamp);
+  } else {
+    date = DateTime.fromMicrosecondsSinceEpoch(timestamp * 1000);
+  }
   return date;
 }
 

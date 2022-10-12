@@ -277,8 +277,9 @@ createFactureModal(BuildContext context,
                                                           _title.text,
                                                       factureDetailPu: _pu.text
                                                           .replaceAll(',', '.'),
-                                                      factureDetailQte:
-                                                          int.parse(_qty.text),
+                                                      factureDetailQte: _qty
+                                                          .text
+                                                          .replaceAll(',', '.'),
                                                       factureDetailDevise:
                                                           _devise,
                                                     );

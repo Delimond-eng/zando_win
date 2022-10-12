@@ -114,7 +114,6 @@ class AddAccountDrawer extends StatelessWidget {
                         compteDevise: _devise,
                         compteLibelle: _libelle.text,
                       );
-
                       await db.insert("comptes", compte.toMap()).then(
                         (id) {
                           dataController.loadAllComptes();

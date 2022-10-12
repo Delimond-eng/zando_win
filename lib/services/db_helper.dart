@@ -38,7 +38,7 @@ class DbHelper {
       await db.execute(
           "CREATE TABLE IF NOT EXISTS factures(facture_id INTEGER NOT NULL PRIMARY KEY, facture_montant REAL, facture_devise TEXT, facture_client_id INTEGER NOT NULL, facture_create_At INTEGER, facture_statut TEXT, facture_state TEXT, user_id INTEGER)");
       await db.execute(
-          "CREATE TABLE IF NOT EXISTS facture_details(facture_detail_id INTEGER NOT NULL PRIMARY KEY, facture_detail_libelle TEXT, facture_detail_qte INTEGER, facture_detail_pu REAL, facture_detail_devise TEXT, facture_detail_create_At INTEGER,facture_detail_state TEXT, facture_id INTEGER)");
+          "CREATE TABLE IF NOT EXISTS facture_details(facture_detail_id INTEGER NOT NULL PRIMARY KEY, facture_detail_libelle TEXT, facture_detail_qte REAL, facture_detail_pu REAL, facture_detail_devise TEXT, facture_detail_create_At INTEGER,facture_detail_state TEXT, facture_id INTEGER)");
       await db.execute(
           "CREATE TABLE IF NOT EXISTS comptes(compte_id INTEGER NOT NULL PRIMARY KEY, compte_libelle TEXT, compte_devise TEXT,compte_status TEXT, compte_create_At INTEGER, compte_state TEXT)");
       await db.execute(
