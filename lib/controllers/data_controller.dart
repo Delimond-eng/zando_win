@@ -77,9 +77,10 @@ class DataController extends GetxController {
       }
       if (query != null) {
         filteredFactures.clear();
-        query.forEach((e) {
+        for (var e in query) {
+          await Future.delayed(const Duration(milliseconds: 500));
           filteredFactures.add(Facture.fromMap(e));
-        });
+        }
       }
     } catch (e) {}
   }
@@ -115,9 +116,10 @@ class DataController extends GetxController {
           "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' AND NOT factures.facture_state='deleted' ORDER BY facture_id DESC");
       if (allFactures != null) {
         factures.clear();
-        allFactures.forEach((e) {
+        for (var e in allFactures) {
+          await Future.delayed(const Duration(milliseconds: 500));
           factures.add(Facture.fromMap(e));
-        });
+        }
       }
     } catch (e) {}
   }
@@ -128,9 +130,10 @@ class DataController extends GetxController {
           "SELECT * FROM clients WHERE NOT client_state ='deleted' ORDER BY client_id DESC");
       if (allClients != null) {
         clients.clear();
-        allClients.forEach((e) {
+        for (var e in allClients) {
+          await Future.delayed(const Duration(milliseconds: 500));
           clients.add(Client.fromMap(e));
-        });
+        }
       }
     } catch (e) {}
   }
@@ -142,27 +145,30 @@ class DataController extends GetxController {
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
         paiements.clear();
-        query.forEach((e) {
+        for (var e in query) {
+          await Future.delayed(const Duration(milliseconds: 500));
           paiements.add(Operations.fromMap(e));
-        });
+        }
         break;
       case "details":
         var query = await NativeDbHelper.rawQuery(
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $field GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
         paiements.clear();
-        query.forEach((e) {
+        for (var e in query) {
+          await Future.delayed(const Duration(milliseconds: 500));
           paiements.add(Operations.fromMap(e));
-        });
+        }
         break;
       case "date":
         var query = await NativeDbHelper.rawQuery(
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
         paiements.clear();
-        query.forEach((e) {
+        for (var e in query) {
+          await Future.delayed(const Duration(milliseconds: 500));
           paiements.add(Operations.fromMap(e));
-        });
+        }
         var strDate = dateToString(parseTimestampToDate(field));
         var p =
             paiements.where((e) => e.operationDate.contains(strDate)).toList();
@@ -176,9 +182,10 @@ class DataController extends GetxController {
     var query = await NativeDbHelper.rawQuery(
         "SELECT * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_facture_id = $factureId");
     paiementDetails.clear();
-    query.forEach((e) {
+    for (var e in query) {
+      await Future.delayed(const Duration(milliseconds: 500));
       paiementDetails.add(Operations.fromMap(e));
-    });
+    }
   }
 
   loadInventories(String fword, {fkey}) async {
@@ -188,25 +195,27 @@ class DataController extends GetxController {
           var query = await NativeDbHelper.rawQuery(
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_create_At,operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
           inventories.clear();
-          query.forEach((e) {
+          for (var e in query) {
             inventories.add(Operations.fromMap(e));
-          });
+          }
           break;
         case "compte":
           var query = await NativeDbHelper.rawQuery(
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $fkey GROUP BY operations.operation_create_At, operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
+
           inventories.clear();
-          query.forEach((e) {
+          for (var e in query) {
             inventories.add(Operations.fromMap(e));
-          });
+          }
           break;
         case "type":
           var query = await NativeDbHelper.rawQuery(
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_type = '$fkey' GROUP BY operations.operation_create_At , operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
+
           inventories.clear();
-          query.forEach((e) {
+          for (var e in query) {
             inventories.add(Operations.fromMap(e));
-          });
+          }
           break;
         case "date":
           var ies =
@@ -240,7 +249,6 @@ class DataController extends GetxController {
 
   loadAllComptes() async {
     try {
-      var db = await DbHelper.initDb();
       var json = await NativeDbHelper.rawQuery(
           "SELECT * FROM comptes WHERE NOT compte_state='deleted'");
       if (json != null) {
@@ -277,25 +285,26 @@ class DataController extends GetxController {
 
   Future syncUserData() async {
     var db = await DbHelper.initDb();
+    final batch = db.batch();
     var syncDatas = await Synchroniser.outPutData();
     try {
       if (syncDatas.users.isNotEmpty) {
-        print(syncDatas.users.length);
         for (var user in syncDatas.users) {
           var check = await db.rawQuery(
             "SELECT * FROM users WHERE user_id = ?",
             [user.userId],
           );
           if (check.isEmpty) {
-            await db.insert("users", user.toMap());
+            batch.insert("users", user.toMap());
           } else {
-            await db.update(
+            batch.update(
               "users",
               user.toMap(),
               where: "user_id=?",
               whereArgs: [user.userId],
             );
           }
+          await batch.commit();
         }
         return "end";
       }
@@ -304,6 +313,7 @@ class DataController extends GetxController {
 
   Future syncData() async {
     var db = await DbHelper.initDb();
+    final batch = db.batch();
     authController.isSyncIn.value = true;
     var syncDatas = await Synchroniser.outPutData();
     try {
@@ -314,15 +324,16 @@ class DataController extends GetxController {
             [user.userId],
           );
           if (check.isEmpty) {
-            await db.insert("users", user.toMap());
+            batch.insert("users", user.toMap());
           } else {
-            await db.update(
+            batch.update(
               "users",
               user.toMap(),
               where: "user_id=?",
               whereArgs: [user.userId],
             );
           }
+          await batch.commit();
         }
       }
       if (syncDatas.clients.isNotEmpty) {
@@ -334,7 +345,8 @@ class DataController extends GetxController {
                 [client.clientId],
               );
               if (check.isEmpty) {
-                await db.insert("clients", client.toMap());
+                batch.insert("clients", client.toMap());
+                await batch.commit();
               }
             }
           }
@@ -350,9 +362,8 @@ class DataController extends GetxController {
                 whereArgs: [facture.factureId],
               );
               if (check.isEmpty) {
-                await db.insert("factures", facture.toMap());
-              } else {
-                Get.back();
+                batch.insert("factures", facture.toMap());
+                await batch.commit();
               }
             }
           }
@@ -370,9 +381,8 @@ class DataController extends GetxController {
                 [detail.factureDetailId],
               );
               if (check.isEmpty) {
-                await db.insert("facture_details", detail.toMap());
-              } else {
-                Get.back();
+                batch.insert("facture_details", detail.toMap());
+                await batch.commit();
               }
             }
           }
@@ -387,7 +397,8 @@ class DataController extends GetxController {
                 [operation.operationId],
               );
               if (check.isEmpty) {
-                await db.insert("operations", operation.toMap());
+                batch.insert("operations", operation.toMap());
+                await batch.commit();
               }
             }
           }
@@ -402,15 +413,16 @@ class DataController extends GetxController {
                 [compte.compteId],
               );
               if (check.isEmpty) {
-                await db.insert("comptes", compte.toMap());
+                batch.insert("comptes", compte.toMap());
               } else {
-                await db.update(
+                batch.update(
                   "comptes",
                   compte.toMap(),
                   where: "compte_id=?",
                   whereArgs: [compte.compteId],
                 );
               }
+              await batch.commit();
             }
           }
         } catch (e) {}

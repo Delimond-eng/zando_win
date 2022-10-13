@@ -10,7 +10,8 @@ class FactureDetail {
   dynamic factureDetailTimestamp;
   String factureDetailState;
   double get total =>
-      double.parse(factureDetailPu) * double.parse(factureDetailQte);
+      double.parse(factureDetailPu.toString()) *
+      double.parse(factureDetailQte.toString());
   FactureDetail({
     this.factureDetailId,
     this.factureDetailLibelle,

@@ -7,7 +7,6 @@ import 'package:zando_m/services/db_helper.dart';
 import 'package:zando_m/utilities/modals.dart';
 import 'package:zando_m/widgets/costum_dropdown.dart';
 
-import '../../global/data_crypt.dart';
 import '../../models/user.dart';
 import '../../widgets/custom_btn.dart';
 import '../../widgets/round_icon_btn.dart';

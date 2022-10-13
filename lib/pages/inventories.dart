@@ -188,11 +188,10 @@ class _InventoriesState extends State<Inventories> {
                         ),
                       ),
                       onPressed: () async {
-                        Xloading.showLottieLoading(context);
-                        await dataController.loadPayments("details",
+                        dataController.loadPayments("details",
                             field: e.operationCompteId);
+
                         inventoryDetailsModal(context, data: e);
-                        Xloading.dismiss();
                       },
                     ),
                     const SizedBox(

@@ -39,7 +39,8 @@ factureDetailsModal(BuildContext context, Facture facture) async {
   /* LAST PAYMENT */
 
   double _lastAmount = 0;
-  var lastPayment = await Report.checkLastPay(facture.factureId);
+  var lastPayment =
+      await Report.checkLastPay(int.parse(facture.factureId.toString()));
   if (lastPayment != null) {
     _lastAmount = lastPayment;
   }
