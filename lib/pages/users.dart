@@ -111,57 +111,58 @@ class _UsersState extends State<Users> {
   }
 
   List<DataRow> _createRows() {
-    return dataController.users
-        .map(
-          (user) => DataRow(
-            cells: [
-              DataCell(
-                Text(
-                  user.userId.toString(),
-                  style: GoogleFonts.didactGothic(
-                    fontWeight: FontWeight.w600,
-                  ),
+    return dataController.users.map(
+      (user) {
+        return DataRow(
+          cells: [
+            DataCell(
+              Text(
+                user.userId.toString(),
+                style: GoogleFonts.didactGothic(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              DataCell(
-                Text(
-                  user.userName,
-                  style: GoogleFonts.didactGothic(
-                    fontWeight: FontWeight.w600,
-                  ),
+            ),
+            DataCell(
+              Text(
+                user.userName,
+                style: GoogleFonts.didactGothic(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              DataCell(
-                Text(
-                  user.userRole,
-                  style: GoogleFonts.didactGothic(
-                    fontWeight: FontWeight.w600,
-                  ),
+            ),
+            DataCell(
+              Text(
+                user.userRole,
+                style: GoogleFonts.didactGothic(
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              DataCell(
-                Container(
-                  padding: const EdgeInsets.all(5.0),
-                  decoration: BoxDecoration(
+            ),
+            DataCell(
+              Container(
+                padding: const EdgeInsets.all(5.0),
+                decoration: BoxDecoration(
+                  color: (user.userAccess == "allowed")
+                      ? Colors.green[200]
+                      : Colors.red[100],
+                  borderRadius: BorderRadius.circular(3.0),
+                ),
+                child: Text(
+                  user.accessStr,
+                  style: GoogleFonts.didactGothic(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11.0,
+                    letterSpacing: 1.0,
                     color: (user.userAccess == "allowed")
-                        ? Colors.green[200]
-                        : Colors.red[100],
-                    borderRadius: BorderRadius.circular(3.0),
-                  ),
-                  child: Text(
-                    user.accessStr,
-                    style: GoogleFonts.didactGothic(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 11.0,
-                      letterSpacing: 1.0,
-                      color: (user.userAccess == "allowed")
-                          ? Colors.green[700]
-                          : Colors.red[700],
-                    ),
+                        ? Colors.green[700]
+                        : Colors.red[700],
                   ),
                 ),
               ),
-              DataCell(Row(
+            ),
+            DataCell(
+              Row(
                 children: [
                   TextButton(
                     style: TextButton.styleFrom(
@@ -217,10 +218,11 @@ class _UsersState extends State<Users> {
                     },
                   ),
                 ],
-              ))
-            ],
-          ),
-        )
-        .toList();
+              ),
+            )
+          ],
+        );
+      },
+    ).toList();
   }
 }

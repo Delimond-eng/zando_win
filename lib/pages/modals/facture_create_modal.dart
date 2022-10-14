@@ -22,10 +22,8 @@ import '../../widgets/tot_info_view.dart';
 
 createFactureModal(BuildContext context,
     {bool showClientList = true, Client client}) async {
-  await dataController.loadClients();
   var clients = dataController.clients;
   var selectedClient = client;
-
   //inputs selectors
   var _title = TextEditingController();
   var _pu = TextEditingController();

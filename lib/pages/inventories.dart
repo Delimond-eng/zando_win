@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
@@ -37,7 +38,13 @@ class _InventoriesState extends State<Inventories> {
     super.initState();
     initData();
     dataController.loadAllComptes();
-    dataController.loadInventories("all");
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      dataController.dataLoading.value = true;
+      dataController.loadInventories("all").then((res) {
+        debugPrint(res.toString());
+        dataController.dataLoading.value = false;
+      });
+    });
     initTot();
   }
 

@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
@@ -23,10 +24,17 @@ class Clients extends StatefulWidget {
 }
 
 class _ClientsState extends State<Clients> {
+  final GlobalKey<NavigatorState> _key = GlobalKey<NavigatorState>();
   @override
   void initState() {
     super.initState();
-    dataController.loadClients();
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      dataController.dataLoading.value = true;
+      dataController.loadClients().then((res) {
+        debugPrint(res.toString());
+        dataController.dataLoading.value = false;
+      });
+    });
   }
 
   List<DataRow> _createRows() {
@@ -153,84 +161,76 @@ class _ClientsState extends State<Clients> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPage(
-      title: "Clients",
-      icon: CupertinoIcons.group_solid,
-      child: LayoutBuilder(
-        builder: (context, constraint) {
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Obx(
-                () => dataController.clients.isNotEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Text(
-                          "Liste des clients",
-                          style: GoogleFonts.didactGothic(
-                            fontSize: 18.0,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      )
-                    : const SizedBox(),
-              ),
-              Obx(() {
-                if (dataController.clients.isNotEmpty) {
-                  return FadeInUp(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10.0,
-                        vertical: 5.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: SearchInput(
-                              spacedLeft: 0,
-                              hintText: "Recherche client...",
-                              onChanged: (kWord) async {
-                                await searchClient(kWord);
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
+    return Scaffold(
+      drawerScrimColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      key: _key,
+      body: CustomPage(
+        title: "Clients",
+        icon: CupertinoIcons.group_solid,
+        child: LayoutBuilder(
+          builder: (context, constraint) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Text(
+                    "Liste des clients",
+                    style: GoogleFonts.didactGothic(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.w700,
                     ),
-                  );
-                }
-                return const SizedBox();
-              }),
-              Expanded(
-                child: Obx(() {
-                  if (dataController.clients.isEmpty) {
-                    return const EmptyTable();
-                  } else {
-                    return FadeInUp(
-                      child: ListView(
-                        padding: const EdgeInsets.all(10.0),
-                        children: [
-                          CostumTable(
-                            cols: const [
-                              "Date création",
-                              "Nom",
-                              "Téléphone",
-                              "Adresse",
-                              ""
-                            ],
-                            data: _createRows(),
-                          )
-                        ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10.0,
+                    vertical: 5.0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: SearchInput(
+                          spacedLeft: 0,
+                          hintText: "Recherche client...",
+                          onChanged: (kWord) async {
+                            await searchClient(kWord);
+                          },
+                        ),
                       ),
-                    );
-                  }
-                }),
-              )
-            ],
-          );
-        },
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Obx(() {
+                    return (dataController.clients.isEmpty)
+                        ? const EmptyTable()
+                        : FadeInUp(
+                            child: ListView(
+                              padding: const EdgeInsets.all(10.0),
+                              children: [
+                                CostumTable(
+                                  cols: const [
+                                    "Date création",
+                                    "Nom",
+                                    "Téléphone",
+                                    "Adresse",
+                                    ""
+                                  ],
+                                  data: _createRows(),
+                                )
+                              ],
+                            ),
+                          );
+                  }),
+                )
+              ],
+            );
+          },
+        ),
       ),
     );
   }

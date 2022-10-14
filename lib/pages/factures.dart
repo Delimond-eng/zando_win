@@ -1,6 +1,8 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/pages/modals/payModal.dart';
@@ -26,17 +28,25 @@ class Factures extends StatefulWidget {
 
 class _FacturesState extends State<Factures> {
   var _filterKeyword = "all";
+  final GlobalKey<NavigatorState> _key = GlobalKey<NavigatorState>();
   @override
   void initState() {
     super.initState();
-    dataController.loadFilterFactures("all");
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      dataController.dataLoading.value = true;
+      dataController.loadFilterFactures("all").then((res) {
+        debugPrint(res.toString());
+        dataController.dataLoading.value = false;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawerScrimColor: Colors.black12,
+      drawerScrimColor: Colors.transparent,
       backgroundColor: Colors.transparent,
+      key: _key,
       body: CustomPage(
         title: "Factures",
         icon: CupertinoIcons.doc_on_doc_fill,
@@ -74,23 +84,47 @@ class _FacturesState extends State<Factures> {
     return Expanded(
       child: FadeInUp(
         child: Obx(() {
-          return dataController.filteredFactures.isEmpty
-              ? const EmptyTable()
-              : ListView(
-                  padding: const EdgeInsets.all(10.0),
-                  children: [
-                    CostumTable(
-                      cols: const [
-                        "Date création",
-                        "Montant",
-                        "Status",
-                        "Client",
-                        ""
-                      ],
-                      data: _createRows(context),
+          if (dataController.dataLoading.value == true) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SpinKitThreeBounce(
+                    color: Colors.pink,
+                  ),
+                  const SizedBox(
+                    height: 8.0,
+                  ),
+                  Text(
+                    "Chargement de données en cours... ",
+                    style: GoogleFonts.didactGothic(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ],
-                );
+                  ),
+                ],
+              ),
+            );
+          } else {
+            return dataController.filteredFactures.isEmpty
+                ? const EmptyTable()
+                : ListView(
+                    padding: const EdgeInsets.all(10.0),
+                    children: [
+                      CostumTable(
+                        cols: const [
+                          "Date création",
+                          "Montant",
+                          "Status",
+                          "Client",
+                          ""
+                        ],
+                        data: _createRows(context),
+                      ),
+                    ],
+                  );
+          }
         }),
       ),
     );
@@ -103,55 +137,51 @@ class _FacturesState extends State<Factures> {
   ];
 
   Widget _topFilters(BuildContext context) {
-    return FadeInUp(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10.0,
-          vertical: 8.0,
-        ),
-        child: StatefulBuilder(builder: (context, setter) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  ..._filters.map((e) {
-                    return FilterBtn(
-                      isSelected: e['keyw'] == _filterKeyword,
-                      title: e['title'],
-                      margin: 10.0,
-                      icon: Icons.filter_list_rounded,
-                      onPressed: () async {
-                        setter(() {
-                          _filterKeyword = e['keyw'];
-                        });
-                        Xloading.showLottieLoading(context);
-                        Future.delayed(const Duration(milliseconds: 200),
-                            () async {
-                          await dataController.loadFilterFactures(e['keyw']);
-                          Xloading.dismiss();
-                        });
-                      },
-                    );
-                  })
-                ],
-              ),
-              const SizedBox(
-                width: 10.0,
-              ),
-              Flexible(
-                child: SearchInput(
-                  spacedLeft: 0,
-                  hintText: "Recherche facture par un nom du client ...",
-                  onChanged: (kWord) async {
-                    await _seachFactures(_filterKeyword, kWord);
-                  },
-                ),
-              ),
-            ],
-          );
-        }),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10.0,
+        vertical: 8.0,
       ),
+      child: StatefulBuilder(builder: (context, setter) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                ..._filters.map((e) {
+                  return FilterBtn(
+                    isSelected: e['keyw'] == _filterKeyword,
+                    title: e['title'],
+                    margin: 10.0,
+                    icon: Icons.filter_list_rounded,
+                    onPressed: () async {
+                      setter(() {
+                        _filterKeyword = e['keyw'];
+                      });
+                      dataController.dataLoading.value = true;
+                      dataController.loadFilterFactures(e['keyw']).then((res) {
+                        dataController.dataLoading.value = false;
+                      });
+                    },
+                  );
+                })
+              ],
+            ),
+            const SizedBox(
+              width: 10.0,
+            ),
+            Flexible(
+              child: SearchInput(
+                spacedLeft: 0,
+                hintText: "Recherche facture par un nom du client ...",
+                onChanged: (kWord) async {
+                  await _seachFactures(_filterKeyword, kWord);
+                },
+              ),
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -161,24 +191,24 @@ class _FacturesState extends State<Factures> {
       switch (key) {
         case "all":
           query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND clients.client_nom LIKE '%$kword%'");
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND clients.client_nom LIKE '%$kword%' ORDER BY clients.client_nom DESC");
           break;
         case "pending":
           query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='en cours' AND NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND  clients.client_nom LIKE '%$kword%'");
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='en cours' AND NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND  clients.client_nom LIKE '%$kword%' ORDER BY clients.client_nom DESC");
           break;
         case "completed":
           query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND clients.client_nom LIKE '%$kword%'");
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND clients.client_nom LIKE '%$kword%' ORDER BY clients.client_nom DESC");
           break;
         default:
           print("other");
       }
       if (query != null) {
         dataController.filteredFactures.clear();
-        query.forEach((e) {
+        for (var e in query) {
           dataController.filteredFactures.add(Facture.fromMap(e));
-        });
+        }
       }
     } catch (e) {}
   }

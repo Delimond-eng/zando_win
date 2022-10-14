@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
@@ -10,6 +11,7 @@ import 'package:zando_m/widgets/empty_table.dart';
 import '../models/operation.dart';
 import '../responsive/base_widget.dart';
 import '../services/native_db_helper.dart';
+import '../utilities/modals.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/filter_btn.dart';
@@ -26,7 +28,13 @@ class _PaiementsState extends State<Paiements> {
   @override
   void initState() {
     super.initState();
-    dataController.loadPayments("all");
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      dataController.dataLoading.value = true;
+      dataController.loadPayments("all").then((res) {
+        debugPrint(res.toString());
+        dataController.dataLoading.value = false;
+      });
+    });
   }
 
   final List<Map> _filters = [
@@ -105,73 +113,71 @@ class _PaiementsState extends State<Paiements> {
 
   Widget _topFilters(BuildContext context) {
     var _selectedFilterKeyword = "all";
-    return FadeInUp(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 10.0,
-          vertical: 8.0,
-        ),
-        child: StatefulBuilder(builder: (context, setter) {
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  ..._filters.map((e) {
-                    return FilterBtn(
-                      isSelected: e['keyw'] == _selectedFilterKeyword,
-                      title: e['title'],
-                      margin: 10.0,
-                      icon: Icons.filter_list_rounded,
-                      onPressed: () async {
-                        if (e['keyw'] == "date") {
-                          var date = await showDatePicked(context);
-                          if (date != null) {
-                            dataController.loadPayments("date", field: date);
-                            setter(() {
-                              _selectedFilterKeyword = e['keyw'];
-                            });
-                          }
-                        } else {
-                          dataController.loadPayments("all");
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10.0,
+        vertical: 8.0,
+      ),
+      child: StatefulBuilder(builder: (context, setter) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                ..._filters.map((e) {
+                  return FilterBtn(
+                    isSelected: e['keyw'] == _selectedFilterKeyword,
+                    title: e['title'],
+                    margin: 10.0,
+                    icon: Icons.filter_list_rounded,
+                    onPressed: () async {
+                      if (e['keyw'] == "date") {
+                        var date = await showDatePicked(context);
+                        if (date != null) {
+                          dataController.loadPayments("date", field: date);
                           setter(() {
                             _selectedFilterKeyword = e['keyw'];
                           });
                         }
-                      },
-                    );
-                  })
-                ],
-              ),
-              const SizedBox(
-                width: 10.0,
-              ),
-              Flexible(
-                child: SearchInput(
-                  spacedLeft: 0,
-                  hintText: "Recherche paiement par un nom du client...",
-                  onChanged: (String kWord) async {
-                    try {
-                      var query = await NativeDbHelper.rawQuery(
-                        "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND clients.client_nom LIKE '%$kWord%' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
-                      );
-
-                      if (query != null) {
-                        dataController.paiements.clear();
-                        query.forEach((e) {
-                          dataController.paiements.add(Operations.fromMap(e));
+                      } else {
+                        dataController.loadPayments("all");
+                        setter(() {
+                          _selectedFilterKeyword = e['keyw'];
                         });
                       }
-                    } catch (e) {
-                      debugPrint(e.toString());
+                    },
+                  );
+                })
+              ],
+            ),
+            const SizedBox(
+              width: 10.0,
+            ),
+            Flexible(
+              child: SearchInput(
+                spacedLeft: 0,
+                hintText: "Recherche paiement par un nom du client...",
+                onChanged: (String kWord) async {
+                  try {
+                    var query = await NativeDbHelper.rawQuery(
+                      "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND clients.client_nom LIKE '%$kWord%' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
+                    );
+
+                    if (query != null) {
+                      dataController.paiements.clear();
+                      query.forEach((e) {
+                        dataController.paiements.add(Operations.fromMap(e));
+                      });
                     }
-                  },
-                ),
+                  } catch (e) {
+                    debugPrint(e.toString());
+                  }
+                },
               ),
-            ],
-          );
-        }),
-      ),
+            ),
+          ],
+        );
+      }),
     );
   }
 
@@ -260,6 +266,7 @@ class _PaiementsState extends State<Paiements> {
               ),
               DataCell(
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     TextButton(
                       style: TextButton.styleFrom(

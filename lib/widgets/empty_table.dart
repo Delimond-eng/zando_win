@@ -1,6 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../global/controllers.dart';
 
 class EmptyTable extends StatelessWidget {
   const EmptyTable({Key key}) : super(key: key);
@@ -17,24 +21,42 @@ class EmptyTable extends StatelessWidget {
           color: Colors.pink,
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.cloud_off_rounded,
-          ),
-          const SizedBox(
-            height: 8.0,
-          ),
-          Text(
-            "Aucune donnée répertoriée !",
-            style: GoogleFonts.didactGothic(
-              color: Colors.pink[800],
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+      child: Obx(
+        () => Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (dataController.dataLoading.value == true) ...[
+              const SpinKitThreeBounce(
+                color: Colors.pink,
+              ),
+              const SizedBox(
+                height: 8.0,
+              ),
+              Text(
+                "Chargement de données en cours... ",
+                style: GoogleFonts.didactGothic(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ] else ...[
+              const Icon(
+                Icons.cloud_off_rounded,
+              ),
+              const SizedBox(
+                height: 8.0,
+              ),
+              Text(
+                "Aucune donnée répertoriée !",
+                style: GoogleFonts.didactGothic(
+                  color: Colors.pink[800],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ]
+          ],
+        ),
       ),
     );
   }

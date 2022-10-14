@@ -135,31 +135,32 @@ class Sidebar extends StatelessWidget {
                     padding: const EdgeInsets.all(10.0),
                     child: Column(
                       children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20.0,
-                                vertical: 30.0,
+                        if (!navigatorController.isActive('/clients'))
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20.0,
+                                  vertical: 30.0,
+                                ),
+                                backgroundColor: Colors.indigo,
                               ),
-                              backgroundColor: Colors.indigo,
-                            ),
-                            onPressed: () {
-                              createCostumerModal(context);
-                            },
-                            label: Text(
-                              "Nouveau client",
-                              style: GoogleFonts.didactGothic(
-                                fontWeight: FontWeight.w800,
+                              onPressed: () {
+                                createCostumerModal(context);
+                              },
+                              label: Text(
+                                "Nouveau client",
+                                style: GoogleFonts.didactGothic(
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
-                            ),
-                            icon: const Icon(
-                              Icons.person_add_alt,
-                              size: 15.0,
+                              icon: const Icon(
+                                Icons.person_add_alt,
+                                size: 15.0,
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(
                           height: 10.0,
                         ),

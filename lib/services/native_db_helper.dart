@@ -101,7 +101,7 @@ class NativeDbHelper {
     }
 
     if (result != null) {
-      return jsonDecode(result);
+      return compute(deserialize, result);
     } else {
       return null;
     }

@@ -214,12 +214,11 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
         if (connected.userAccess == "allowed") {
           authController.loggedUser.value = connected;
           Xloading.showLottieLoading(context);
-          await dataController.editCurrency();
-          await dataController.refreshDatas();
+          dataController.editCurrency();
+          dataController.refreshDatas();
           navigatorController.activeItem.value = "/";
           Future.delayed(const Duration(milliseconds: 100), () async {
             Xloading.dismiss();
-
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomeScreen()),

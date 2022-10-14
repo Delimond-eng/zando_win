@@ -7,6 +7,7 @@ import 'package:zando_m/global/controllers.dart';
 
 import '../models/sync_model.dart';
 import 'db_helper.dart';
+import 'native_db_helper.dart';
 
 class Synchroniser {
   static const String baseURL = "http://z-database.rtgroup-rdc.com";
@@ -105,14 +106,20 @@ class Synchroniser {
     }
   }
 
-  static Future<void> send(Map<String, dynamic> map) async {
+  static Future send(Map<String, dynamic> map) async {
     String json = jsonEncode(map);
     Directory tempDir = await getTemporaryDirectory();
     String tempPath = tempDir.path;
     String filename = "file.json";
-    File file = File(tempPath + "/" + filename);
+    File file = File("$tempPath/$filename");
     file.createSync();
     file.writeAsStringSync(json);
+    var users = await NativeDbHelper.query("users");
+    if (users != null) {
+      if (users[0]['user_name'] == "admin") {
+        return;
+      }
+    }
     try {
       var request =
           http.MultipartRequest('POST', Uri.parse("$baseURL/datas/sync/in"));
@@ -133,7 +140,7 @@ class Synchroniser {
               }
             });
           })
-          .catchError((err) => print('error : ' + err.toString()))
+          .catchError((err) => print('error : $err'))
           .whenComplete(() {});
     } catch (err) {
       print("error from $err");

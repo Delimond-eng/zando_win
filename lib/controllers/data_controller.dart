@@ -31,6 +31,7 @@ class DataController extends GetxController {
   var paiementDetails = <Operations>[].obs;
   var inventories = <Operations>[].obs;
   var daySellCount = 0.0.obs;
+  var dataLoading = false.obs;
 
   @override
   void onInit() {
@@ -41,7 +42,7 @@ class DataController extends GetxController {
   Future<void> refreshDatas() async {
     refreshCurrency();
     loadActivatedComptes();
-    loadFacturesEnAttente();
+    loadClients();
   }
 
   //* Load all users list*//
@@ -50,39 +51,41 @@ class DataController extends GetxController {
     var userData = await db.query("users");
     if (userData != null) {
       users.clear();
-      userData.forEach((e) {
+      for (var e in userData) {
         users.add(User.fromMap(e));
-      });
+      }
+      users.removeWhere((user) => user.userName.contains("admi"));
     }
   }
 
-  loadFilterFactures(String key) async {
+  Future loadFilterFactures(String key) async {
     try {
       var query;
-      switch (key) {
-        case "all":
-          query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
-          break;
-        case "pending":
-          query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='en cours' AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
-          break;
-        case "completed":
-          query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
-          break;
-        default:
-          print("other");
+      if (key == "all") {
+        query = await NativeDbHelper.rawQuery(
+            "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
       }
+      if (key == "pending") {
+        query = await NativeDbHelper.rawQuery(
+            "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' OR factures.facture_statut = 'en attente'  AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
+      }
+
+      if (key == "completed") {
+        query = await NativeDbHelper.rawQuery(
+            "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
+      }
+
       if (query != null) {
-        filteredFactures.clear();
+        List<Facture> temps = <Facture>[];
         for (var e in query) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          filteredFactures.add(Facture.fromMap(e));
+          await Future.delayed(const Duration(microseconds: 1000));
+          temps.add(Facture.fromMap(e));
         }
+        filteredFactures.clear();
+        filteredFactures.addAll(temps);
       }
     } catch (e) {}
+    return "end";
   }
 
   refreshDashboardCounts() async {
@@ -110,111 +113,154 @@ class DataController extends GetxController {
     daySellCount.value = s;
   }
 
-  loadFacturesEnAttente() async {
+  Future loadFacturesEnAttente() async {
+    print("loading");
     try {
       var allFactures = await NativeDbHelper.rawQuery(
-          "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' AND NOT factures.facture_state='deleted' ORDER BY facture_id DESC");
+          "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
       if (allFactures != null) {
-        factures.clear();
+        List<Facture> tempsList = <Facture>[];
         for (var e in allFactures) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          factures.add(Facture.fromMap(e));
+          await Future.delayed(const Duration(microseconds: 1000));
+          tempsList.add(Facture.fromMap(e));
         }
+        factures.clear();
+        factures.addAll(tempsList);
       }
     } catch (e) {}
+    return "end";
   }
 
-  loadClients() async {
+  Future loadClients() async {
     try {
       var allClients = await NativeDbHelper.rawQuery(
           "SELECT * FROM clients WHERE NOT client_state ='deleted' ORDER BY client_id DESC");
       if (allClients != null) {
-        clients.clear();
+        List<Client> tempsList = <Client>[];
         for (var e in allClients) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          clients.add(Client.fromMap(e));
+          await Future.delayed(const Duration(microseconds: 1000));
+          tempsList.add(Client.fromMap(e));
         }
+        clients.clear();
+        clients.addAll(tempsList);
       }
     } catch (e) {}
+    return "end";
   }
 
-  loadPayments(String key, {int field}) async {
+  Future loadPayments(String key, {int field}) async {
     switch (key) {
       case "all":
         var query = await NativeDbHelper.rawQuery(
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
-        paiements.clear();
-        for (var e in query) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          paiements.add(Operations.fromMap(e));
+        if (query != null) {
+          List<Operations> tempsList = <Operations>[];
+          for (var e in query) {
+            await Future.delayed(const Duration(microseconds: 1000));
+            tempsList.add(Operations.fromMap(e));
+          }
+          paiements.clear();
+          paiements.addAll(tempsList);
         }
         break;
       case "details":
         var query = await NativeDbHelper.rawQuery(
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $field GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
-        paiements.clear();
-        for (var e in query) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          paiements.add(Operations.fromMap(e));
+        if (query != null) {
+          List<Operations> tempsList = <Operations>[];
+          for (var e in query) {
+            await Future.delayed(const Duration(microseconds: 1000));
+            tempsList.add(Operations.fromMap(e));
+          }
+          paiements.clear();
+          paiements.addAll(tempsList);
         }
         break;
       case "date":
         var query = await NativeDbHelper.rawQuery(
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
-        paiements.clear();
-        for (var e in query) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          paiements.add(Operations.fromMap(e));
+        if (query != null) {
+          List<Operations> tempsList = <Operations>[];
+
+          for (var e in query) {
+            await Future.delayed(const Duration(microseconds: 1000));
+            tempsList.add(Operations.fromMap(e));
+          }
+          paiements.clear();
+          paiements.addAll(tempsList);
+          var strDate = dateToString(parseTimestampToDate(field));
+          var p = paiements
+              .where((e) => e.operationDate.contains(strDate))
+              .toList();
+          paiements.clear();
+          paiements.addAll(p);
+          break;
         }
-        var strDate = dateToString(parseTimestampToDate(field));
-        var p =
-            paiements.where((e) => e.operationDate.contains(strDate)).toList();
-        paiements.clear();
-        paiements.addAll(p);
-        break;
     }
+    return "end";
   }
 
-  showPaiementDetails(int factureId) async {
+  Future showPaiementDetails(int factureId) async {
     var query = await NativeDbHelper.rawQuery(
         "SELECT * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_facture_id = $factureId");
-    paiementDetails.clear();
-    for (var e in query) {
-      await Future.delayed(const Duration(milliseconds: 500));
-      paiementDetails.add(Operations.fromMap(e));
+    if (query != null) {
+      List<Operations> tempsList = <Operations>[];
+      for (var e in query) {
+        await Future.delayed(const Duration(microseconds: 1000));
+        tempsList.add(Operations.fromMap(e));
+      }
+      paiementDetails.clear();
+      paiementDetails.addAll(tempsList);
     }
+    return "end";
   }
 
-  loadInventories(String fword, {fkey}) async {
+  Future loadInventories(String fword, {fkey}) async {
     try {
       switch (fword) {
         case "all":
           var query = await NativeDbHelper.rawQuery(
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_create_At,operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
-          inventories.clear();
-          for (var e in query) {
-            inventories.add(Operations.fromMap(e));
+
+          if (query != null) {
+            List<Operations> tempsList = <Operations>[];
+            for (var e in query) {
+              await Future.delayed(const Duration(microseconds: 1000));
+              tempsList.add(Operations.fromMap(e));
+            }
+            inventories.clear();
+            inventories.addAll(tempsList);
           }
+
           break;
         case "compte":
           var query = await NativeDbHelper.rawQuery(
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $fkey GROUP BY operations.operation_create_At, operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
-
-          inventories.clear();
-          for (var e in query) {
-            inventories.add(Operations.fromMap(e));
+          if (query != null) {
+            List<Operations> tempsList = <Operations>[];
+            for (var e in query) {
+              await Future.delayed(const Duration(microseconds: 1000));
+              tempsList.add(Operations.fromMap(e));
+            }
+            inventories.clear();
+            inventories.addAll(tempsList);
           }
           break;
         case "type":
           var query = await NativeDbHelper.rawQuery(
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_type = '$fkey' GROUP BY operations.operation_create_At , operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
 
-          inventories.clear();
-          for (var e in query) {
-            inventories.add(Operations.fromMap(e));
+          if (query != null) {
+            List<Operations> tempsList = <Operations>[];
+            for (var e in query) {
+              await Future.delayed(const Duration(microseconds: 1000));
+              tempsList.add(Operations.fromMap(e));
+            }
+            inventories.clear();
+            inventories.addAll(tempsList);
           }
           break;
         case "date":
@@ -232,6 +278,7 @@ class DataController extends GetxController {
           break;
       }
     } catch (e) {}
+    return "end";
   }
 
   loadActivatedComptes() async {
@@ -372,7 +419,6 @@ class DataController extends GetxController {
         }
       }
       if (syncDatas.factureDetails.isNotEmpty) {
-        print("details : ${syncDatas.factureDetails.length}");
         try {
           for (var detail in syncDatas.factureDetails) {
             if (detail.factureDetailState == "allowed") {

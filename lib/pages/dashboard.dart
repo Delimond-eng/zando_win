@@ -1,5 +1,6 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
@@ -32,7 +33,13 @@ class _DashBoardState extends State<DashBoard> {
     super.initState();
     dataController.countDaySum();
     dataController.refreshDashboardCounts();
-    dataController.loadFacturesEnAttente();
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      dataController.dataLoading.value = true;
+      dataController.loadFacturesEnAttente().then((res) {
+        debugPrint(res.toString());
+        dataController.dataLoading.value = false;
+      });
+    });
   }
 
   @override
@@ -455,7 +462,9 @@ class _DashBoardState extends State<DashBoard> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () => _deleteFacture(fac),
+                      onPressed: () {
+                        _deleteFacture(context, fac);
+                      },
                     ),
                   ],
                 ),
@@ -466,24 +475,29 @@ class _DashBoardState extends State<DashBoard> {
         .toList();
   }
 
-  _deleteFacture(Facture fac) async {
+  _deleteFacture(BuildContext context, Facture fac) async {
+    print(fac.factureId);
     var db = await DbHelper.initDb();
     XDialog.show(context,
         message: "Etes-vous sûr de vouloir supprimer cette facture ?",
         onValidated: () async {
-      Xloading.showLottieLoading(context);
-      await db.update(
+      await db
+          .update(
         "facture_details",
         {"facture_detail_state": "deleted"},
         where: "facture_id=?",
-        whereArgs: [fac.factureId],
-      );
-      await db
-          .update("factures", {"facture_state": "deleted"},
-              where: "facture_id=?", whereArgs: [fac.factureId])
-          .then((id) {
-        Xloading.dismiss();
-        dataController.loadFacturesEnAttente();
+        whereArgs: [int.parse(fac.factureId.toString())],
+      )
+          .then((res) async {
+        await db
+            .update("factures", {"facture_state": "deleted"},
+                where: "facture_id=?",
+                whereArgs: [int.parse(fac.factureId.toString())])
+            .then((id) async {
+          print(id);
+          dataController.loadFacturesEnAttente();
+          dataController.refreshDashboardCounts();
+        });
       });
     }, onFailed: () {});
   }
