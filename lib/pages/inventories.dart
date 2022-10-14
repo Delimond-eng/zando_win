@@ -43,9 +43,9 @@ class _InventoriesState extends State<Inventories> {
       dataController.loadInventories("all").then((res) {
         debugPrint(res.toString());
         dataController.dataLoading.value = false;
+        initTot();
       });
     });
-    initTot();
   }
 
   initData() async {
@@ -195,9 +195,10 @@ class _InventoriesState extends State<Inventories> {
                         ),
                       ),
                       onPressed: () async {
-                        dataController.loadPayments("details",
-                            field: e.operationCompteId);
-
+                        dataController.loadPayments(
+                          "details",
+                          field: int.parse(e.operationTimestamp.toString()),
+                        );
                         inventoryDetailsModal(context, data: e);
                       },
                     ),

@@ -157,7 +157,7 @@ class DataController extends GetxController {
         if (query != null) {
           List<Operations> tempsList = <Operations>[];
           for (var e in query) {
-            await Future.delayed(const Duration(microseconds: 1000));
+            await Future.delayed(const Duration(microseconds: 500));
             tempsList.add(Operations.fromMap(e));
           }
           paiements.clear();
@@ -166,16 +166,19 @@ class DataController extends GetxController {
         break;
       case "details":
         var query = await NativeDbHelper.rawQuery(
-          "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $field GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
+          "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_id DESC",
         );
         if (query != null) {
           List<Operations> tempsList = <Operations>[];
           for (var e in query) {
-            await Future.delayed(const Duration(microseconds: 1000));
+            await Future.delayed(const Duration(microseconds: 500));
             tempsList.add(Operations.fromMap(e));
           }
+          var strDate = dateToString(parseTimestampToDate(field));
+          var filtersList =
+              tempsList.where((op) => op.operationDate.contains(strDate));
           paiements.clear();
-          paiements.addAll(tempsList);
+          paiements.addAll(filtersList);
         }
         break;
       case "date":
