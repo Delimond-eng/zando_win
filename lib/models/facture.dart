@@ -48,7 +48,7 @@ class Facture {
     DateTime now =
         DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     if (factureTimestamp == null) {
-      data["facture_create_At"] = factureCreateAt ?? convertToTimestamp(now);
+      data["facture_create_At"] = convertToTimestamp(now);
     } else {
       data["facture_create_At"] = int.parse(factureTimestamp.toString());
     }

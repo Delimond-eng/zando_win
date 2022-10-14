@@ -99,8 +99,12 @@ class Synchroniser {
     } catch (err) {
       print("error from output data $err");
     }
-    if (response.statusCode != null && response.statusCode == 200) {
-      return SyncModel.fromMap(jsonDecode(response.body));
+    if (response != null) {
+      if (response.statusCode != null && response.statusCode == 200) {
+        return SyncModel.fromMap(jsonDecode(response.body));
+      } else {
+        return null;
+      }
     } else {
       return null;
     }

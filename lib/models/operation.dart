@@ -36,6 +36,7 @@ class Operations {
     this.operationFactureId,
     this.operationUserId,
     this.operationState,
+    this.operationTimestamp,
   });
 
   Map<String, dynamic> toMap() {

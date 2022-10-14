@@ -164,7 +164,7 @@ class _DashBoardState extends State<DashBoard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Ventes journalières",
+                          "Paiements journaliers",
                           style: GoogleFonts.didactGothic(
                             color: Colors.grey[800],
                             fontWeight: FontWeight.w600,

@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +24,7 @@ showPayModal(BuildContext context, Facture selectedFac) async {
   Compte _selectedCompte;
   String _selectedMode;
   String _devise = "USD";
+  int _datePaie;
 
   var _textMontant = TextEditingController();
   var lastPayment = await Report.checkLastPay(selectedFac.factureId);
@@ -84,17 +87,37 @@ showPayModal(BuildContext context, Facture selectedFac) async {
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
                       children: [
-                        SimpleField(
-                          hintText: "Saisir le montant paiement... ",
-                          iconColor: Colors.green,
-                          icon: CupertinoIcons.money_dollar_circle_fill,
-                          title: "Montant paiement",
-                          controller: _textMontant,
-                          isCurrency: true,
-                          selectedCurrency: _devise,
-                          onChangedCurrency: (devise) {
-                            _devise = devise;
-                          },
+                        Row(
+                          children: [
+                            Flexible(
+                              child: SimpleField(
+                                iconColor: Colors.pink,
+                                icon: Icons.calendar_month_outlined,
+                                title: "Date paiement",
+                                isDate: true,
+                                onDatePicked: (timestamp) {
+                                  _datePaie = timestamp;
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 15.0,
+                            ),
+                            Flexible(
+                              child: SimpleField(
+                                hintText: "Saisir le montant paiement... ",
+                                iconColor: Colors.green,
+                                icon: CupertinoIcons.money_dollar_circle_fill,
+                                title: "Montant paiement",
+                                controller: _textMontant,
+                                isCurrency: true,
+                                selectedCurrency: _devise,
+                                onChangedCurrency: (devise) {
+                                  _devise = devise;
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(
                           height: 15.0,
@@ -320,6 +343,7 @@ showPayModal(BuildContext context, Facture selectedFac) async {
                             operationUserId:
                                 authController.loggedUser.value.userId,
                             operationMode: _selectedMode,
+                            operationTimestamp: _datePaie,
                           );
 
                           /* Insert data from database */
@@ -338,13 +362,15 @@ showPayModal(BuildContext context, Facture selectedFac) async {
                               /* end statment */
                             }
                             Xloading.dismiss();
-                            await dataController.loadFacturesEnAttente();
+
                             Get.back();
+                            // ignore: use_build_context_synchronously
                             XDialog.showMessage(
                               context,
                               message: "Paiement effectué avec succès !",
                               type: "success",
                             );
+                            dataController.countDaySum();
                             navigatorController.navigateTo('/paiements');
                           });
                         },

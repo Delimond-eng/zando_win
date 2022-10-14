@@ -6,7 +6,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/pages/modals/payModal.dart';
-import 'package:zando_m/utilities/modals.dart';
 import 'package:zando_m/widgets/empty_table.dart';
 
 import '../global/controllers.dart';

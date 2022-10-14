@@ -91,20 +91,24 @@ class DataController extends GetxController {
   refreshDashboardCounts() async {
     var counts = await Report.getCount();
     dashboardCounts.clear();
+    await Future.delayed(const Duration(milliseconds: 100));
     dashboardCounts.addAll(counts);
   }
 
   refreshDayCompteSum() async {
     var sums = await Report.getDayAccountSums();
     dailySums.clear();
+    await Future.delayed(const Duration(milliseconds: 100));
     dailySums.addAll(sums);
   }
 
   refreshCurrency() async {
     var db = await DbHelper.initDb();
     var taux = await db.query("currencies");
-    if (taux != null && taux.isNotEmpty) {
+    if (taux.isNotEmpty) {
       currency.value = Currency.fromMap(taux.first);
+    } else {
+      editCurrency();
     }
   }
 
@@ -320,15 +324,13 @@ class DataController extends GetxController {
         await db.insert("currencies", data.toMap());
       }
       if (value != null) {
-        var lastUpdatedId = await db.update(
+        await db.update(
           "currencies",
           data.toMap(),
           where: "cid=?",
           whereArgs: [1],
         );
-        if (lastUpdatedId != null) {
-          refreshCurrency();
-        }
+        refreshCurrency();
       }
     } catch (e) {}
   }
@@ -354,7 +356,8 @@ class DataController extends GetxController {
               whereArgs: [user.userId],
             );
           }
-          await batch.commit();
+          var res = await batch.commit();
+          print("committed $res");
         }
         return "end";
       }

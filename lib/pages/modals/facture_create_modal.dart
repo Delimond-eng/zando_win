@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,7 @@ createFactureModal(BuildContext context,
   var _pu = TextEditingController();
   var _qty = TextEditingController();
   var _devise = "USD";
+  var _dateCreate;
 
   //items list
   List<FactureDetail> items = <FactureDetail>[];
@@ -205,8 +208,24 @@ createFactureModal(BuildContext context,
                                       ),
                                     ),
                                     Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: SizedBox(
+                                        width: 250,
+                                        child: SimpleField(
+                                          filledColor: Colors.white,
+                                          iconColor: Colors.pink,
+                                          icon: Icons.calendar_month_outlined,
+                                          title: "Date création",
+                                          isDate: true,
+                                          onDatePicked: (timestamp) {
+                                            _dateCreate = timestamp;
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
                                       padding: const EdgeInsets.fromLTRB(
-                                          10.0, 0, 10.0, 10.0),
+                                          10.0, 10, 10.0, 10.0),
                                       child: Row(
                                         children: [
                                           Flexible(
@@ -369,7 +388,7 @@ createFactureModal(BuildContext context,
                                         //calculate facture amount //
                                         double total = 0.0;
                                         double currentTot = 0.0;
-                                        items.forEach((e) {
+                                        for (var e in items) {
                                           if (e.factureDetailDevise == "CDF") {
                                             currentTot =
                                                 convertCdfToDollars(e.total);
@@ -377,7 +396,7 @@ createFactureModal(BuildContext context,
                                             currentTot = e.total;
                                           }
                                           total += currentTot;
-                                        });
+                                        }
                                         // end //
 
                                         //create facture statment. //
@@ -386,6 +405,7 @@ createFactureModal(BuildContext context,
                                               selectedClient.clientId,
                                           factureDevise: "USD",
                                           factureMontant: total.toString(),
+                                          factureTimestamp: _dateCreate,
                                         );
                                         Xloading.showLottieLoading(context);
                                         await db
@@ -403,8 +423,7 @@ createFactureModal(BuildContext context,
                                               );
                                             }
                                             Xloading.dismiss();
-                                            dataController
-                                                .loadFacturesEnAttente();
+
                                             dataController
                                                 .refreshDashboardCounts();
                                             Get.back();
