@@ -214,6 +214,7 @@ class _UsersState extends State<Users> {
                     ),
                     onPressed: () async {
                       authController.selectedEditUser.value = user;
+                      authController.isUpdated.value = true;
                       _scaffoldKey.currentState.openEndDrawer();
                     },
                   ),

@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -87,3 +88,13 @@ double convertDollarsToCdf(double dollars) {
 }
 
 String lastChars(String s, int n) => s.substring(s.length - n);
+
+Future<bool> checkConnection() async {
+  var result = await (Connectivity().checkConnectivity());
+  if (result == ConnectivityResult.mobile ||
+      result == ConnectivityResult.wifi) {
+    return true;
+  } else {
+    return false;
+  }
+}

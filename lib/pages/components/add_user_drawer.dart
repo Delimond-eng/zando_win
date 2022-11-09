@@ -20,10 +20,13 @@ class AddUserDrawer extends StatelessWidget {
     var _userName = TextEditingController();
     var _userPass = TextEditingController();
     var _userRole;
-    var user = authController.selectedEditUser.value;
-
-    if (user != null) {
-      _userName.text = user.userName;
+    var user = User();
+    var isUpdated = authController.isUpdated.value;
+    if (isUpdated) {
+      user = authController.selectedEditUser.value;
+      if (user != null) {
+        _userName.text = user.userName;
+      }
     }
     return Container(
       alignment: Alignment.topCenter,
@@ -100,22 +103,21 @@ class AddUserDrawer extends StatelessWidget {
                     height: 10.0,
                   ),
                   DropField(
-                    data: const ["admin", "utilisateur"],
+                    data: const ["admin", "utilisateur", "gestionnaire stock"],
                     hintText: "Sélectionnez un rôle...",
                     iconColor: Colors.indigo,
                     icon: Icons.manage_accounts_outlined,
                     onChanged: (value) {
                       _userRole = value;
-                      debugPrint(value);
                     },
                   ),
                   const SizedBox(
                     height: 10.0,
                   ),
                   CustomBtn(
-                    icon: user == null ? CupertinoIcons.add : Icons.edit,
-                    color: user == null ? Colors.green : Colors.blue,
-                    label: user == null
+                    icon: !isUpdated ? CupertinoIcons.add : Icons.edit,
+                    color: !isUpdated ? Colors.green : Colors.blue,
+                    label: !isUpdated
                         ? "Créer utilisateur"
                         : "Modifier utilisateur",
                     onPressed: () async {
@@ -136,8 +138,8 @@ class AddUserDrawer extends StatelessWidget {
                         userPass: _userPass.text,
                         userRole: _userRole,
                       );
-                      if (user == null) {
-                        await db.insert("users", user.toMap()).then((id) {
+                      if (!isUpdated) {
+                        db.insert("users", user.toMap()).then((id) {
                           dataController.loadUsers();
                           Navigator.pop(context);
                           XDialog.showMessage(

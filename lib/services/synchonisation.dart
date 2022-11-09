@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:zando_m/global/controllers.dart';
 
 import '../models/sync_model.dart';
+import '../repositories/stock_repo/sync.dart';
 import 'db_helper.dart';
 import 'native_db_helper.dart';
 
@@ -58,8 +59,10 @@ class Synchroniser {
         }
       } catch (err) {}
 
-      await dataController.syncData().then((value) {
-        authController.isSyncIn.value = false;
+      await dataController.syncData().then((value) async {
+        await SyncStock.syncIn().then(
+          (value) => authController.isSyncIn.value = false,
+        );
       });
 
       /*try {
@@ -111,6 +114,7 @@ class Synchroniser {
   }
 
   static Future send(Map<String, dynamic> map) async {
+    print("starting synch");
     String json = jsonEncode(map);
     Directory tempDir = await getTemporaryDirectory();
     String tempPath = tempDir.path;

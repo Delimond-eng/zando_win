@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common/sqlite_api.dart';
+import 'global.dart' as db_path;
 
 class DbHelper {
   static Future<void> initDbLibrary() async {
@@ -13,10 +14,9 @@ class DbHelper {
 
   static Future<Database> initDb() async {
     var databaseFactory = databaseFactoryFfi;
-    var dbName = "zandodb.dll";
     final scriptDir = File(Platform.script.toFilePath()).parent;
     String appDocPath = scriptDir.path;
-    String path = join(appDocPath, dbName);
+    String path = join(appDocPath, db_path.databaseName);
     var db = await databaseFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(

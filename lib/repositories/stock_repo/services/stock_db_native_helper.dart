@@ -4,10 +4,9 @@ import 'dart:ffi';
 import 'package:flutter/foundation.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:sqlite3/open.dart';
-import '../repositories/stock_repo/services/stock_db_native_helper.dart';
-import 'global.dart' as db_path;
+import '../global.dart' as db_path;
 
-class NativeDbHelper {
+class StockNativeDbHelper {
   static Database _db;
 
   static Future<Database> get db async {
@@ -27,7 +26,6 @@ class NativeDbHelper {
   }
 
   static initDb() async {
-    await StockNativeDbHelper.initDb();
     if (Platform.isWindows || Platform.isMacOS) {
       open.overrideForAll(openLibrary);
     }

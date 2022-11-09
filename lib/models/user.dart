@@ -20,7 +20,7 @@ class User {
   Map<String, dynamic> toMap() {
     Map<String, dynamic> data = {};
     if (userId != null) {
-      data["user_id"] = userId;
+      data["user_id"] = int.parse(userId.toString());
     }
     if (userName != null) {
       data["user_name"] = userName;

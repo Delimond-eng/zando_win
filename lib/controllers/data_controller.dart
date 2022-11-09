@@ -54,7 +54,7 @@ class DataController extends GetxController {
       for (var e in userData) {
         users.add(User.fromMap(e));
       }
-      users.removeWhere((user) => user.userName.contains("admi"));
+      users.removeWhere((user) => user.userName.contains("ad"));
     }
   }
 
@@ -386,8 +386,8 @@ class DataController extends GetxController {
               whereArgs: [user.userId],
             );
           }
-          await batch.commit();
         }
+        await batch.commit();
       }
       if (syncDatas.clients.isNotEmpty) {
         try {
@@ -399,10 +399,10 @@ class DataController extends GetxController {
               );
               if (check.isEmpty) {
                 batch.insert("clients", client.toMap());
-                await batch.commit();
               }
             }
           }
+          await batch.commit();
         } catch (err) {}
       }
       if (syncDatas.factures.isNotEmpty) {
@@ -416,10 +416,10 @@ class DataController extends GetxController {
               );
               if (check.isEmpty) {
                 batch.insert("factures", facture.toMap());
-                await batch.commit();
               }
             }
           }
+          await batch.commit();
         } catch (e) {
           print(e);
         }
@@ -434,10 +434,10 @@ class DataController extends GetxController {
               );
               if (check.isEmpty) {
                 batch.insert("facture_details", detail.toMap());
-                await batch.commit();
               }
             }
           }
+          await batch.commit();
         } catch (e) {}
       }
       if (syncDatas.operations.isNotEmpty) {
@@ -450,10 +450,10 @@ class DataController extends GetxController {
               );
               if (check.isEmpty) {
                 batch.insert("operations", operation.toMap());
-                await batch.commit();
               }
             }
           }
+          await batch.commit();
         } catch (e) {}
       }
       if (syncDatas.comptes.isNotEmpty) {
@@ -474,8 +474,8 @@ class DataController extends GetxController {
                   whereArgs: [compte.compteId],
                 );
               }
-              await batch.commit();
             }
+            await batch.commit();
           }
         } catch (e) {}
       }
