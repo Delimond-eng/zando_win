@@ -1,3 +1,5 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firedart/firedart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
@@ -156,11 +158,28 @@ class StockCreateDrawer extends StatelessWidget {
                           );
                           await db
                               .insert("mouvements", mouvt.toMap())
-                              .then((res) {
+                              .then((res) async {
                             Xloading.dismiss();
                             XDialog.showMessage(context,
                                 message: "stock crée avec succès",
                                 type: "success");
+                            var result =
+                                await (Connectivity().checkConnectivity());
+                            if (result == ConnectivityResult.mobile ||
+                                result == ConnectivityResult.wifi) {
+                              await Firestore.instance
+                                  .collection('articles')
+                                  .document(articleId.toString())
+                                  .create(article.toMap());
+                              await Firestore.instance
+                                  .collection('stocks')
+                                  .document(stockId.toString())
+                                  .create(stock.toMap());
+                              await Firestore.instance
+                                  .collection('mouvements')
+                                  .document(res.toString())
+                                  .create(mouvt.toMap());
+                            }
                             Future.delayed(const Duration(seconds: 3), () {
                               onReload();
                             });

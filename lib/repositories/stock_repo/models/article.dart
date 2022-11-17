@@ -26,7 +26,11 @@ class Article {
     } else {
       data["article_create_At"] = int.parse(articleTimestamp.toString());
     }
-    data["article_state"] = articleState ?? "allowed";
+    if (data["article_state"] != null) {
+      data["article_state"] = articleState;
+    } else {
+      data["article_state"] = "allowed";
+    }
     return data;
   }
 
@@ -34,7 +38,7 @@ class Article {
     articleId = data["article_id"];
     articleLibelle = data["article_libelle"];
     articleState = data["article_state"];
-    articleCreateAt =
-        dateToString(parseTimestampToDate(data["article_create_At"]));
+    articleCreateAt = dateToString(
+        parseTimestampToDate(int.parse(data["article_create_At"].toString())));
   }
 }

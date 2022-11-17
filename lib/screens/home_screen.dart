@@ -13,6 +13,7 @@ import '../responsive/base_widget.dart';
 import '../responsive/enum_screens.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/user_session_card.dart';
+import '../global/data_sync_in_out.dart' as sync;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key key}) : super(key: key);
@@ -48,25 +49,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 25.0,
                       ),
                 onPressed: () async {
+                  sync.startSync();
                   var result = await (Connectivity().checkConnectivity());
                   if (result == ConnectivityResult.mobile ||
                       result == ConnectivityResult.wifi) {
                     if (authController.checkUser) {
-                      Synchroniser.inPutData().then((value) {
+                      await Synchroniser.inPutData().then((value) {
                         authController.isSyncIn.value = false;
                       });
-                    } else if (authController.loggedUser.value.userRole
-                            .contains("admin") ||
-                        authController.loggedUser.value.userRole
-                            .toLowerCase()
-                            .contains("Gestionnaire".toLowerCase())) {
-                      print("admin or manager");
-                      SyncStock.syncIn().then(
-                        (value) {
-                          SyncStock.syncOut().then(
-                              (s) => authController.isSyncIn.value = false);
-                        },
-                      );
+                    } else {
+                      await SyncStock.syncOut().then((value) {
+                        SyncStock.syncIn().then(
+                            (value) => authController.isSyncIn.value = false);
+                      });
                     }
                   }
                 },

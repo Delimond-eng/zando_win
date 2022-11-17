@@ -12,11 +12,9 @@ class AuthController extends GetxController {
 
   bool get checkUser {
     if (loggedUser.value.userRole.contains("admin")) {
-      print("admin");
       return true;
     }
     if (loggedUser.value.userRole.contains("utilisateur")) {
-      print("user");
       return true;
     }
     return false;

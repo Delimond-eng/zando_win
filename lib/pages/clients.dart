@@ -208,22 +208,20 @@ class _ClientsState extends State<Clients> {
                   child: Obx(() {
                     return (dataController.clients.isEmpty)
                         ? const EmptyTable()
-                        : FadeInUp(
-                            child: ListView(
-                              padding: const EdgeInsets.all(10.0),
-                              children: [
-                                CostumTable(
-                                  cols: const [
-                                    "Date création",
-                                    "Nom",
-                                    "Téléphone",
-                                    "Adresse",
-                                    ""
-                                  ],
-                                  data: _createRows(),
-                                )
-                              ],
-                            ),
+                        : ListView(
+                            padding: const EdgeInsets.all(10.0),
+                            children: [
+                              CostumTable(
+                                cols: const [
+                                  "Date création",
+                                  "Nom",
+                                  "Téléphone",
+                                  "Adresse",
+                                  ""
+                                ],
+                                data: _createRows(),
+                              )
+                            ],
                           );
                   }),
                 )

@@ -54,8 +54,12 @@ class Stock {
     } else {
       data["stock_create_At"] = int.parse(stockCreatAt.toString());
     }
+    if (stockState != null) {
+      data["stock_state"] = stockState;
+    } else {
+      data["stock_state"] = "allowed";
+    }
 
-    data["stock_state"] = stockState ?? "allowed";
     return data;
   }
 
@@ -77,7 +81,8 @@ class Stock {
       stockSo = data["sorties"];
     }
     try {
-      stockDate = dateToString(parseTimestampToDate(data["stock_create_At"]));
+      stockDate = dateToString(
+          parseTimestampToDate(int.parse(data["stock_create_At"].toString())));
     } catch (err) {}
   }
 }

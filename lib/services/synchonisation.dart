@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/repositories/facturation_repo/sync_in.dart';
 
 import '../models/sync_model.dart';
-import '../repositories/stock_repo/sync.dart';
 import 'db_helper.dart';
 import 'native_db_helper.dart';
 
@@ -59,11 +59,7 @@ class Synchroniser {
         }
       } catch (err) {}
 
-      await dataController.syncData().then((value) async {
-        await SyncStock.syncIn().then(
-          (value) => authController.isSyncIn.value = false,
-        );
-      });
+      await FacturationRepo.syncData();
 
       /*try {
         var articles = await db.query("articles",

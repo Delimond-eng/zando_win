@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'package:animate_do/animate_do.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
@@ -11,7 +9,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../global/controllers.dart';
 import '../../global/data_crypt.dart';
 import '../../models/user.dart';
-import '../../repositories/stock_repo/sync.dart';
 import '../../responsive/base_widget.dart';
 import '../../responsive/enum_screens.dart';
 import '../../services/db_helper.dart';
@@ -19,6 +16,7 @@ import '../../utilities/modals.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/auth_field.dart';
 import '../home_screen.dart';
+import '../../global/data_sync_in_out.dart' as sync;
 
 class AuthenticateScreen extends StatefulWidget {
   const AuthenticateScreen({Key key}) : super(key: key);
@@ -56,6 +54,7 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
   }
 
   initData() async {
+    await authController.registerUser();
     var result = await (Connectivity().checkConnectivity());
     if (result == ConnectivityResult.mobile ||
         result == ConnectivityResult.wifi) {
@@ -227,21 +226,7 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
               MaterialPageRoute(builder: (context) => const HomeScreen()),
               (route) => false,
             );
-            var result = await (Connectivity().checkConnectivity());
-            if (result == ConnectivityResult.mobile ||
-                result == ConnectivityResult.wifi) {
-              if (connected.userRole == "admin") {
-                await dataController.syncData();
-                await SyncStock.syncIn();
-              } else if (connected.userRole.contains("utilisateur")) {
-                await dataController.syncData();
-              }
-              if (connected.userRole
-                  .toLowerCase()
-                  .contains("Gestionnaire".toLowerCase())) {
-                await SyncStock.syncIn();
-              }
-            }
+            sync.startSync();
           });
         } else {
           EasyLoading.showToast(

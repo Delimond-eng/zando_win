@@ -43,7 +43,11 @@ class MouvementStock {
     } else {
       data["mouvt_create_At"] = int.parse(mouvtTimestamp);
     }
-    data["mouvt_state"] = mouvtState ?? "allowed";
+    if (mouvtState != null) {
+      data["mouvt_state"] = mouvtState;
+    } else {
+      data["mouvt_state"] = "allowed";
+    }
     return data;
   }
 
@@ -58,7 +62,8 @@ class MouvementStock {
       stock = Stock.fromMap(data);
     }
     try {
-      mouvtDate = dateToString(parseTimestampToDate(data["mouvt_create_At"]));
+      mouvtDate = dateToString(
+          parseTimestampToDate(int.parse(data["mouvt_create_At"].toString())));
     } catch (err) {}
   }
 }

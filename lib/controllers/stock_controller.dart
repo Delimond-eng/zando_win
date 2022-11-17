@@ -4,7 +4,6 @@ import 'package:zando_m/global/controllers.dart';
 
 import '../repositories/stock_repo/models/stock.dart';
 import '../repositories/stock_repo/services/db_stock_helper.dart';
-import '../repositories/stock_repo/sync.dart';
 
 class StockController extends GetxController {
   static StockController instance = Get.find();
@@ -30,10 +29,5 @@ class StockController extends GetxController {
     }
     stocks.addAll(s);
     dataController.dataLoading.value = false;
-    var result = await (Connectivity().checkConnectivity());
-    if (result == ConnectivityResult.mobile ||
-        result == ConnectivityResult.wifi) {
-      await SyncStock.syncOut();
-    }
   }
 }

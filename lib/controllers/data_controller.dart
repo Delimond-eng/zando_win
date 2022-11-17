@@ -1,9 +1,11 @@
+import 'dart:isolate';
+
 import 'package:get/get.dart';
 import 'package:zando_m/models/operation.dart';
 import 'package:zando_m/reports/models/daily_count.dart';
 import 'package:zando_m/reports/report.dart';
 
-import '../global/controllers.dart';
+import '../global/foreground_task.dart';
 import '../global/utils.dart';
 import '../models/client.dart';
 import '../models/compte.dart';
@@ -59,6 +61,7 @@ class DataController extends GetxController {
   }
 
   Future loadFilterFactures(String key) async {
+    ReceivePort receivePort = ReceivePort();
     try {
       var query;
       if (key == "all") {
@@ -76,13 +79,13 @@ class DataController extends GetxController {
       }
 
       if (query != null) {
-        List<Facture> temps = <Facture>[];
-        for (var e in query) {
-          await Future.delayed(const Duration(microseconds: 1000));
-          temps.add(Facture.fromMap(e));
-        }
+        final isolate = await Isolate.spawn(
+            ForegroundIsolate.readFilteredFactureFromForeground,
+            [receivePort.sendPort, query]);
+        final list = await receivePort.first;
         filteredFactures.clear();
-        filteredFactures.addAll(temps);
+        filteredFactures.addAll(list);
+        isolate.kill(priority: Isolate.immediate);
       }
     } catch (e) {}
     return "end";
@@ -118,54 +121,47 @@ class DataController extends GetxController {
   }
 
   Future loadFacturesEnAttente() async {
-    print("loading");
+    ReceivePort receivePort = ReceivePort();
     try {
-      var allFactures = await NativeDbHelper.rawQuery(
-          "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
-      if (allFactures != null) {
-        List<Facture> tempsList = <Facture>[];
-        for (var e in allFactures) {
-          await Future.delayed(const Duration(microseconds: 1000));
-          tempsList.add(Facture.fromMap(e));
-        }
-        factures.clear();
-        factures.addAll(tempsList);
-      }
+      final isolate = await Isolate.spawn(
+          ForegroundIsolate.readFacturePendingOnIsolate, receivePort.sendPort);
+      final list = await receivePort.first;
+      factures.clear();
+      factures.addAll(list);
+      isolate.kill(priority: Isolate.immediate);
     } catch (e) {}
     return "end";
   }
 
   Future loadClients() async {
+    ReceivePort receivePort = ReceivePort();
     try {
-      var allClients = await NativeDbHelper.rawQuery(
-          "SELECT * FROM clients WHERE NOT client_state ='deleted' ORDER BY client_id DESC");
-      if (allClients != null) {
-        List<Client> tempsList = <Client>[];
-        for (var e in allClients) {
-          await Future.delayed(const Duration(microseconds: 1000));
-          tempsList.add(Client.fromMap(e));
-        }
-        clients.clear();
-        clients.addAll(tempsList);
-      }
+      final isolate = await Isolate.spawn(
+          ForegroundIsolate.readClientsFromIsolate, receivePort.sendPort);
+      final list = await receivePort.first;
+      clients.clear();
+      clients.addAll(list);
+      isolate.kill(priority: Isolate.immediate);
     } catch (e) {}
+
     return "end";
   }
 
   Future loadPayments(String key, {int field}) async {
+    ReceivePort receivePort = ReceivePort();
     switch (key) {
       case "all":
         var query = await NativeDbHelper.rawQuery(
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
         if (query != null) {
-          List<Operations> tempsList = <Operations>[];
-          for (var e in query) {
-            await Future.delayed(const Duration(microseconds: 500));
-            tempsList.add(Operations.fromMap(e));
-          }
+          final isolate = await Isolate.spawn(
+              ForegroundIsolate.readPaiesFromIsolate,
+              [receivePort.sendPort, query]);
+          final list = await receivePort.first;
           paiements.clear();
-          paiements.addAll(tempsList);
+          paiements.addAll(list);
+          isolate.kill(priority: Isolate.immediate);
         }
         break;
       case "details":
@@ -173,14 +169,16 @@ class DataController extends GetxController {
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_id DESC",
         );
         if (query != null) {
-          List<Operations> tempsList = <Operations>[];
-          for (var e in query) {
-            await Future.delayed(const Duration(microseconds: 500));
-            tempsList.add(Operations.fromMap(e));
-          }
+          final isolate = await Isolate.spawn(
+              ForegroundIsolate.readPaiesFromIsolate,
+              [receivePort.sendPort, query]);
+          final list = await receivePort.first;
+
+          isolate.kill(priority: Isolate.immediate);
+
           var strDate = dateToString(parseTimestampToDate(field));
           var filtersList =
-              tempsList.where((op) => op.operationDate.contains(strDate));
+              list.where((op) => op.operationDate.contains(strDate));
           paiements.clear();
           paiements.addAll(filtersList);
         }
@@ -190,14 +188,14 @@ class DataController extends GetxController {
           "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
         if (query != null) {
-          List<Operations> tempsList = <Operations>[];
+          final isolate = await Isolate.spawn(
+              ForegroundIsolate.readPaiesFromIsolate,
+              [receivePort.sendPort, query]);
+          final list = await receivePort.first;
 
-          for (var e in query) {
-            await Future.delayed(const Duration(microseconds: 1000));
-            tempsList.add(Operations.fromMap(e));
-          }
+          isolate.kill(priority: Isolate.immediate);
           paiements.clear();
-          paiements.addAll(tempsList);
+          paiements.addAll(list);
           var strDate = dateToString(parseTimestampToDate(field));
           var p = paiements
               .where((e) => e.operationDate.contains(strDate))
@@ -211,21 +209,23 @@ class DataController extends GetxController {
   }
 
   Future showPaiementDetails(int factureId) async {
+    ReceivePort receivePort = ReceivePort();
     var query = await NativeDbHelper.rawQuery(
         "SELECT * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_facture_id = $factureId");
     if (query != null) {
-      List<Operations> tempsList = <Operations>[];
-      for (var e in query) {
-        await Future.delayed(const Duration(microseconds: 1000));
-        tempsList.add(Operations.fromMap(e));
-      }
+      final isolate = await Isolate.spawn(
+          ForegroundIsolate.readPaiesFromIsolate,
+          [receivePort.sendPort, query]);
+      final list = await receivePort.first;
       paiementDetails.clear();
-      paiementDetails.addAll(tempsList);
+      paiementDetails.addAll(list);
+      isolate.kill(priority: Isolate.immediate);
     }
     return "end";
   }
 
   Future loadInventories(String fword, {fkey}) async {
+    ReceivePort receivePort = ReceivePort();
     try {
       switch (fword) {
         case "all":
@@ -233,13 +233,13 @@ class DataController extends GetxController {
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_create_At,operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
 
           if (query != null) {
-            List<Operations> tempsList = <Operations>[];
-            for (var e in query) {
-              await Future.delayed(const Duration(microseconds: 1000));
-              tempsList.add(Operations.fromMap(e));
-            }
+            final isolate = await Isolate.spawn(
+                ForegroundIsolate.readInventoriesFromForeground,
+                [receivePort.sendPort, query]);
+            final list = await receivePort.first;
             inventories.clear();
-            inventories.addAll(tempsList);
+            inventories.addAll(list);
+            isolate.kill(priority: Isolate.immediate);
           }
 
           break;
@@ -247,13 +247,13 @@ class DataController extends GetxController {
           var query = await NativeDbHelper.rawQuery(
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $fkey GROUP BY operations.operation_create_At, operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
           if (query != null) {
-            List<Operations> tempsList = <Operations>[];
-            for (var e in query) {
-              await Future.delayed(const Duration(microseconds: 1000));
-              tempsList.add(Operations.fromMap(e));
-            }
+            final isolate = await Isolate.spawn(
+                ForegroundIsolate.readInventoriesFromForeground,
+                [receivePort.sendPort, query]);
+            final list = await receivePort.first;
             inventories.clear();
-            inventories.addAll(tempsList);
+            inventories.addAll(list);
+            isolate.kill(priority: Isolate.immediate);
           }
           break;
         case "type":
@@ -261,13 +261,13 @@ class DataController extends GetxController {
               "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_type = '$fkey' GROUP BY operations.operation_create_At , operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
 
           if (query != null) {
-            List<Operations> tempsList = <Operations>[];
-            for (var e in query) {
-              await Future.delayed(const Duration(microseconds: 1000));
-              tempsList.add(Operations.fromMap(e));
-            }
+            final isolate = await Isolate.spawn(
+                ForegroundIsolate.readInventoriesFromForeground,
+                [receivePort.sendPort, query]);
+            final list = await receivePort.first;
             inventories.clear();
-            inventories.addAll(tempsList);
+            inventories.addAll(list);
+            isolate.kill(priority: Isolate.immediate);
           }
           break;
         case "date":
@@ -362,128 +362,5 @@ class DataController extends GetxController {
         return "end";
       }
     } catch (e) {}
-  }
-
-  Future syncData() async {
-    var db = await DbHelper.initDb();
-    final batch = db.batch();
-    authController.isSyncIn.value = true;
-    var syncDatas = await Synchroniser.outPutData();
-    try {
-      if (syncDatas.users.isNotEmpty) {
-        for (var user in syncDatas.users) {
-          var check = await db.rawQuery(
-            "SELECT * FROM users WHERE user_id = ?",
-            [user.userId],
-          );
-          if (check.isEmpty) {
-            batch.insert("users", user.toMap());
-          } else {
-            batch.update(
-              "users",
-              user.toMap(),
-              where: "user_id=?",
-              whereArgs: [user.userId],
-            );
-          }
-        }
-        await batch.commit();
-      }
-      if (syncDatas.clients.isNotEmpty) {
-        try {
-          for (var client in syncDatas.clients) {
-            if (client.clientState == "allowed") {
-              var check = await db.rawQuery(
-                "SELECT * FROM clients WHERE client_id = ?",
-                [client.clientId],
-              );
-              if (check.isEmpty) {
-                batch.insert("clients", client.toMap());
-              }
-            }
-          }
-          await batch.commit();
-        } catch (err) {}
-      }
-      if (syncDatas.factures.isNotEmpty) {
-        try {
-          for (var facture in syncDatas.factures) {
-            if (facture.factureState == "allowed") {
-              var check = await db.query(
-                "factures",
-                where: "facture_id= ?",
-                whereArgs: [facture.factureId],
-              );
-              if (check.isEmpty) {
-                batch.insert("factures", facture.toMap());
-              }
-            }
-          }
-          await batch.commit();
-        } catch (e) {
-          print(e);
-        }
-      }
-      if (syncDatas.factureDetails.isNotEmpty) {
-        try {
-          for (var detail in syncDatas.factureDetails) {
-            if (detail.factureDetailState == "allowed") {
-              var check = await db.rawQuery(
-                "SELECT * FROM facture_details WHERE facture_detail_id = ?",
-                [detail.factureDetailId],
-              );
-              if (check.isEmpty) {
-                batch.insert("facture_details", detail.toMap());
-              }
-            }
-          }
-          await batch.commit();
-        } catch (e) {}
-      }
-      if (syncDatas.operations.isNotEmpty) {
-        try {
-          for (var operation in syncDatas.operations) {
-            if (operation.operationState == "allowed") {
-              var check = await db.rawQuery(
-                "SELECT * FROM operations WHERE operation_id = ?",
-                [operation.operationId],
-              );
-              if (check.isEmpty) {
-                batch.insert("operations", operation.toMap());
-              }
-            }
-          }
-          await batch.commit();
-        } catch (e) {}
-      }
-      if (syncDatas.comptes.isNotEmpty) {
-        try {
-          for (var compte in syncDatas.comptes) {
-            if (compte.compteState == "allowed") {
-              var check = await db.rawQuery(
-                "SELECT * FROM comptes WHERE compte_id = ? ",
-                [compte.compteId],
-              );
-              if (check.isEmpty) {
-                batch.insert("comptes", compte.toMap());
-              } else {
-                batch.update(
-                  "comptes",
-                  compte.toMap(),
-                  where: "compte_id=?",
-                  whereArgs: [compte.compteId],
-                );
-              }
-            }
-            await batch.commit();
-          }
-        } catch (e) {}
-      }
-      authController.isSyncIn.value = false;
-      await refreshDatas();
-      return "end";
-    } catch (err) {
-      print(err);
-    }
   }
 }
